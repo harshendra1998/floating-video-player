@@ -31,10 +31,14 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
 
   useEffect(() => {
     if (open) {
-      const w = Math.min(window.innerWidth * 0.4, 480);
-      const h = 270;
+      const isMobile = window.innerWidth < 600;
+      const w = isMobile ? window.innerWidth - 40 : Math.min(window.innerWidth * 0.4, 480);
+      const h = isMobile ? (window.innerWidth - 40) * 0.6 : 270;
       setSize({ w, h });
-      setPos({ x: window.innerWidth - w - 10, y: window.innerHeight - h - 10 });
+      setPos({ 
+        x: isMobile ? 20 : window.innerWidth - w - 10, 
+        y: isMobile ? 60 : window.innerHeight - h - 10 
+      });
     }
   }, [open]);
 
