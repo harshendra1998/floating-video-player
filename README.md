@@ -5,7 +5,7 @@ A draggable and resizable floating video player (Picture-in-Picture) component f
 ## Installation
 
 ```bash
-npm install floating-video-player
+npm install floating-player
 ```
 
 ## Peer Dependencies
@@ -18,7 +18,7 @@ npm install react react-dom
 
 ```tsx
 import React, { useState } from 'react';
-import { FloatingVideoPlayer } from 'floating-video-player';
+import { FloatingVideoPlayer } from 'floating-player';
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);

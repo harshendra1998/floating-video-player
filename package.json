@@ -1,5 +1,5 @@
 {
-  "name": "floating-video-player",
+  "name": "floating-player",
   "version": "1.0.0",
   "description": "A draggable and resizable floating video player component for React",
   "main": "dist/index.js",
