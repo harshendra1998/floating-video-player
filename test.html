@@ -15,10 +15,10 @@
     .btn { background: #4CAF50; color: white; border: none; padding: 15px 30px; font-size: 16px; cursor: pointer; border-radius: 5px; }
     .btn:hover { background: #45a049; }
     .video-container { position: fixed; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
-    .drag-bar { background: #333; color: white; padding: 8px 12px; display: flex; justify-content: space-between; cursor: grab; user-select: none; }
+    .drag-bar { background: #333; color: white; padding: 8px 12px; display: flex; justify-content: space-between; cursor: grab; user-select: none; touch-action: none; }
     .drag-bar:active { cursor: grabbing; }
     .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; cursor: pointer; padding: 4px 10px; border-radius: 4px; }
-    .resize-corner { position: absolute; right: 0; bottom: 0; width: 20px; height: 20px; background: rgba(255,255,255,0.3); cursor: nwse-resize; border-top-left-radius: 4px; }
+    .resize-corner { touch-action: none; }
     video { display: block; width: 100%; height: 100%; object-fit: contain; background: black; }
   </style>
 </head>
@@ -32,6 +32,8 @@
       const [size, setSize] = useState({ w: 480, h: 270 });
       const dragging = useRef(false);
       const resizing = useRef(false);
+      const touchDragging = useRef(false);
+      const touchResizing = useRef(false);
       const offset = useRef({ x: 0, y: 0 });
       const start = useRef({ x: 0, y: 0, w: 0, h: 0 });
       const videoRef = useRef(null);
@@ -46,10 +48,31 @@
             setSize({ w: Math.max(200, start.current.w + (e.clientX - start.current.x)), h: Math.max(150, start.current.h + (e.clientY - start.current.y)) });
           }
         };
+        
+        const touchMove = (e) => {
+          if (touchDragging.current && e.touches.length === 1) {
+            e.preventDefault();
+            setPos({ x: e.touches[0].clientX - offset.current.x, y: e.touches[0].clientY - offset.current.y });
+          }
+          if (touchResizing.current && e.touches.length === 1) {
+            e.preventDefault();
+            setSize({ w: Math.max(200, start.current.w + (e.touches[0].clientX - start.current.x)), h: Math.max(150, start.current.h + (e.touches[0].clientY - start.current.y)) });
+          }
+        };
+
         const up = () => { dragging.current = false; resizing.current = false; };
+        const touchEnd = () => { touchDragging.current = false; touchResizing.current = false; };
+        
         document.addEventListener('mousemove', move);
         document.addEventListener('mouseup', up);
-        return () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+        document.addEventListener('touchmove', touchMove, { passive: false });
+        document.addEventListener('touchend', touchEnd);
+        return () => { 
+          document.removeEventListener('mousemove', move); 
+          document.removeEventListener('mouseup', up);
+          document.removeEventListener('touchmove', touchMove);
+          document.removeEventListener('touchend', touchEnd);
+        };
       }, []);
 
       useEffect(() => {
@@ -58,10 +81,7 @@
           const w = isMobile ? window.innerWidth - 40 : Math.min(window.innerWidth * 0.4, 480);
           const h = isMobile ? (window.innerWidth - 40) * 0.6 : 270;
           setSize({ w, h });
-          setPos({ 
-            x: isMobile ? 20 : window.innerWidth - w - 10, 
-            y: isMobile ? 60 : window.innerHeight - h - 10 
-          });
+          setPos({ x: isMobile ? 20 : window.innerWidth - w - 10, y: isMobile ? 60 : window.innerHeight - h - 10 });
         }
       }, [open]);
 
@@ -73,10 +93,28 @@
         offset.current = { x: e.clientX - r.left, y: e.clientY - r.top };
       };
 
+      const onTouchDrag = (e) => {
+        if (e.target.classList.contains('resize-corner')) return;
+        if (e.touches.length === 1) {
+          e.preventDefault();
+          touchDragging.current = true;
+          const r = ref.current.getBoundingClientRect();
+          offset.current = { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+        }
+      };
+
       const onResize = (e) => {
         e.preventDefault();
         resizing.current = true;
         start.current = { x: e.clientX, y: e.clientY, w: size.w, h: size.h };
+      };
+
+      const onTouchResize = (e) => {
+        if (e.touches.length === 1) {
+          e.preventDefault();
+          touchResizing.current = true;
+          start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, w: size.w, h: size.h };
+        }
       };
 
       useEffect(() => { if (open && videoRef.current) videoRef.current.play(); }, [open]);
@@ -85,7 +123,7 @@
 
       return (
         <div ref={ref} className="video-container" style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}>
-          <div className="drag-bar" onMouseDown={onDrag}>
+          <div className="drag-bar" onMouseDown={onDrag} onTouchStart={onTouchDrag}>
             <span>Drag to move</span>
             <button className="close-btn" onClick={onClose}>X</button>
           </div>
@@ -94,7 +132,7 @@
               <source src={content} />
             </video>
           </div>
-          <div className="resize-corner" onMouseDown={onResize}></div>
+          <div className="resize-corner" onMouseDown={onResize} onTouchStart={onTouchResize} style={{ position: 'absolute', right: 0, bottom: 0, width: 20, height: 20, background: 'rgba(255,255,255,0.3)', cursor: 'nwse-resize', borderTopLeftRadius: 4 }}></div>
         </div>
       );
     };

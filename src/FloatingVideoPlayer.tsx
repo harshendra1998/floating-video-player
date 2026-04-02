@@ -23,6 +23,8 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
   const [size, setSize] = useState({ w: 480, h: 270 });
   const isDragging = useRef(false);
   const isResizing = useRef(false);
+  const isTouchDragging = useRef(false);
+  const isTouchResizing = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const startSize = useRef({ w: 0, h: 0 });
   const startPos = useRef({ x: 0, y: 0 });
@@ -60,6 +62,25 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
       }
     };
 
+    const onTouchMove = (e: TouchEvent) => {
+      if (isTouchDragging.current && e.touches.length === 1) {
+        e.preventDefault();
+        let newX = e.touches[0].clientX - dragOffset.current.x;
+        let newY = e.touches[0].clientY - dragOffset.current.y;
+        newX = Math.max(0, Math.min(window.innerWidth - size.w, newX));
+        newY = Math.max(0, Math.min(window.innerHeight - size.h, newY));
+        setPos({ x: newX, y: newY });
+      }
+      if (isTouchResizing.current && e.touches.length === 1) {
+        e.preventDefault();
+        const deltaX = e.touches[0].clientX - startPos.current.x;
+        const deltaY = e.touches[0].clientY - startPos.current.y;
+        const newW = Math.max(200, startSize.current.w + deltaX);
+        const newH = Math.max(150, startSize.current.h + deltaY);
+        setSize({ w: newW, h: newH });
+      }
+    };
+
     const onMouseUp = () => {
       isDragging.current = false;
       isResizing.current = false;
@@ -67,11 +88,20 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
       document.body.style.userSelect = 'auto';
     };
 
+    const onTouchEnd = () => {
+      isTouchDragging.current = false;
+      isTouchResizing.current = false;
+    };
+
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
     };
   }, [size]);
 
@@ -87,6 +117,18 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
     }
   };
 
+  const onTouchDragStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).classList.contains('resize-handle')) return;
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      isTouchDragging.current = true;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        dragOffset.current = { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+      }
+    }
+  };
+
   const onResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -95,6 +137,16 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
     document.body.style.userSelect = 'none';
     startPos.current = { x: e.clientX, y: e.clientY };
     startSize.current = { w: size.w, h: size.h };
+  };
+
+  const onTouchResizeStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      isTouchResizing.current = true;
+      startPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      startSize.current = { w: size.w, h: size.h };
+    }
   };
 
   useEffect(() => {
@@ -127,6 +179,7 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
       {showControls && (
         <div
           onMouseDown={onDragStart}
+          onTouchStart={onTouchDragStart}
           style={{
             cursor: 'grab',
             display: 'flex',
@@ -136,6 +189,7 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
             color: '#ffffff',
             padding: '8px 12px',
             userSelect: 'none',
+            touchAction: 'none',
           }}
         >
           <span style={{ fontSize: '12px', opacity: 0.8 }}>⋮⋮ Drag</span>
@@ -171,6 +225,7 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
       <div
         className="resize-handle"
         onMouseDown={onResizeStart}
+        onTouchStart={onTouchResizeStart}
         style={{
           position: 'absolute',
           right: 0,
@@ -186,6 +241,7 @@ const FloatingVideoPlayer: React.FC<FloatingVideoPlayerProps> = ({
           color: '#333',
           fontSize: '12px',
           fontWeight: 'bold',
+          touchAction: 'none',
         }}
       >
         ⤡
