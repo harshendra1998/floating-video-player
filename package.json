@@ -1,0 +1,40 @@
+{
+  "name": "floating-video-player",
+  "version": "1.0.0",
+  "description": "A draggable and resizable floating video player component for React",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --external react react-dom",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "react",
+    "video",
+    "player",
+    "floating",
+    "pip",
+    "picture-in-picture",
+    "draggable",
+    "resizable"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT"
+}

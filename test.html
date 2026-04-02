@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floating Video Player Test</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 40px; }
+    .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; }
+    h1 { margin-bottom: 20px; color: #333; }
+    .btn { background: #4CAF50; color: white; border: none; padding: 15px 30px; font-size: 16px; cursor: pointer; border-radius: 5px; }
+    .btn:hover { background: #45a049; }
+    .video-container { position: fixed; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    .drag-bar { background: #333; color: white; padding: 8px 12px; display: flex; justify-content: space-between; cursor: grab; user-select: none; }
+    .drag-bar:active { cursor: grabbing; }
+    .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; cursor: pointer; padding: 4px 10px; border-radius: 4px; }
+    .resize-corner { position: absolute; right: 0; bottom: 0; width: 20px; height: 20px; background: rgba(255,255,255,0.3); cursor: nwse-resize; border-top-left-radius: 4px; }
+    video { display: block; width: 100%; height: 100%; object-fit: contain; background: black; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    const FloatingVideoPlayer = ({ open, onClose, content }) => {
+      const [pos, setPos] = useState({ x: 0, y: 0 });
+      const [size, setSize] = useState({ w: 480, h: 270 });
+      const dragging = useRef(false);
+      const resizing = useRef(false);
+      const offset = useRef({ x: 0, y: 0 });
+      const start = useRef({ x: 0, y: 0, w: 0, h: 0 });
+      const videoRef = useRef(null);
+      const ref = useRef(null);
+
+      useEffect(() => {
+        const move = (e) => {
+          if (dragging.current) {
+            setPos({ x: e.clientX - offset.current.x, y: e.clientY - offset.current.y });
+          }
+          if (resizing.current) {
+            setSize({ w: Math.max(200, start.current.w + (e.clientX - start.current.x)), h: Math.max(150, start.current.h + (e.clientY - start.current.y)) });
+          }
+        };
+        const up = () => { dragging.current = false; resizing.current = false; };
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
+        return () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+      }, []);
+
+      useEffect(() => {
+        if (open) {
+          setPos({
+            x: window.innerWidth - size.w - 10,
+            y: window.innerHeight - size.h - 10
+          });
+        }
+      }, [open]);
+
+      const onDrag = (e) => {
+        if (e.target.classList.contains('resize-corner')) return;
+        e.preventDefault();
+        dragging.current = true;
+        const r = ref.current.getBoundingClientRect();
+        offset.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+      };
+
+      const onResize = (e) => {
+        e.preventDefault();
+        resizing.current = true;
+        start.current = { x: e.clientX, y: e.clientY, w: size.w, h: size.h };
+      };
+
+      useEffect(() => { if (open && videoRef.current) videoRef.current.play(); }, [open]);
+
+      if (!open) return null;
+
+      return (
+        <div ref={ref} className="video-container" style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}>
+          <div className="drag-bar" onMouseDown={onDrag}>
+            <span>Drag to move</span>
+            <button className="close-btn" onClick={onClose}>X</button>
+          </div>
+          <div style={{ flex: 1, background: 'black', height: 'calc(100% - 36px)' }}>
+            <video ref={videoRef} controls playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }}>
+              <source src={content} />
+            </video>
+          </div>
+          <div className="resize-corner" onMouseDown={onResize}></div>
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [show, setShow] = useState(false);
+      return (
+        <div className="container">
+          <h1>Floating Video Player</h1>
+          <p style={{ marginBottom: 20 }}>Click button to open floating video player</p>
+          <button className="btn" onClick={() => setShow(true)}>Open Video</button>
+          <FloatingVideoPlayer open={show} onClose={() => setShow(false)} content="https://www.w3schools.com/tags/mov_bbb.mp4" />
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
