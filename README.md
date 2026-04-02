@@ -5,7 +5,7 @@ A draggable and resizable floating video player (Picture-in-Picture) component f
 ## Installation
 
 ```bash
-npm install floating-player
+npm install floating-player@1.0.1
 ```
 
 ## Peer Dependencies

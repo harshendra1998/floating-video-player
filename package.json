@@ -1,6 +1,6 @@
 {
   "name": "floating-player",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A draggable and resizable floating video player component for React",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -36,5 +36,10 @@
     "resizable"
   ],
   "author": "Your Name <your.email@example.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/harshendra1998/floating-video-player"
+  },
+  "homepage": "https://github.com/harshendra1998/floating-video-player#readme"
 }
